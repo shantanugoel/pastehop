@@ -2,6 +2,15 @@
 name = "pastehop"
 version = "0.1.0"
 edition = "2024"
+description = "Paste local images and files into remote terminal AI agent sessions over SSH"
+license = "MIT"
+repository = "https://github.com/shantanugoel/pastehop"
+homepage = "https://github.com/shantanugoel/pastehop"
+readme = "README.md"
+keywords = ["clipboard", "ssh", "paste", "terminal", "remote"]
+categories = ["command-line-utilities", "development-tools"]
+
+exclude = ["docs/"]
 
 [[bin]]
 name = "ph"
