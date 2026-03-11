@@ -1,4 +1,4 @@
-# Image Paste Helper Implementation Plan
+# PasteHop Implementation Plan
 
 Date: March 10, 2026
 Status: Proposed MVP implementation plan
@@ -31,19 +31,19 @@ These rules should guide implementation decisions:
 
 The first release should include:
 
-- `iph attach <paths...>`
-- `iph attach --clipboard`
-- `iph hook wezterm ...`
-- `iph hook kitty ...`
-- `iph hook iterm2 ...`
-- `iph install <terminal>`
-- `iph uninstall <terminal>`
-- `iph doctor`
-- `iph gc`
+- `ph attach <paths...>`
+- `ph attach --clipboard`
+- `ph hook wezterm ...`
+- `ph hook kitty ...`
+- `ph hook iterm2 ...`
+- `ph install <terminal>`
+- `ph uninstall <terminal>`
+- `ph doctor`
+- `ph gc`
 - clipboard image support on macOS and Linux
 - explicit file upload support
 - one-hop SSH target resolution
-- remote staging under `~/.cache/image-paste-helper/uploads/`
+- remote staging under `~/.cache/pastehop/uploads/`
 - path injection for WezTerm, Kitty, and iTerm2
 
 The first release should explicitly defer:
@@ -139,7 +139,7 @@ If none of the above is trustworthy, return `passthrough_key` for hooks or requi
 
 Use one local config file:
 
-- `~/.config/image-paste-helper/config.toml`
+- `~/.config/pastehop/config.toml`
 
 Keep the schema small:
 
@@ -163,7 +163,7 @@ Deliverables:
 
 Acceptance criteria:
 
-- `iph --help` shows the full planned command surface
+- `ph --help` shows the full planned command surface
 - hook commands can return valid JSON without side effects
 - config file is created on first write and read correctly after restart
 
@@ -175,9 +175,9 @@ Deliverables:
 - local file validation and size-limit checks
 - `ssh`/`scp` transport wrapper
 - first-use host confirmation prompt
-- `iph attach <paths...>`
-- `iph attach --print`
-- `iph attach --dry-run`
+- `ph attach <paths...>`
+- `ph attach --print`
+- `ph attach --dry-run`
 
 Acceptance criteria:
 
@@ -195,14 +195,14 @@ Why this phase comes early:
 
 Deliverables:
 
-- `iph attach --clipboard`
+- `ph attach --clipboard`
 - clipboard image detection on macOS and Linux
 - temp-file materialization as PNG
 - best-effort clipboard file-list support where straightforward
 
 Acceptance criteria:
 
-- copying an image locally and running `iph attach --clipboard --print` yields a remote path
+- copying an image locally and running `ph attach --clipboard --print` yields a remote path
 - text-only clipboard content fails cleanly for `attach --clipboard`
 - Linux file-list support is optional and does not block image support
 
@@ -210,10 +210,10 @@ Acceptance criteria:
 
 Deliverables:
 
-- `iph hook wezterm ...`
+- `ph hook wezterm ...`
 - WezTerm Lua installer template
-- `iph install wezterm`
-- `iph uninstall wezterm`
+- `ph install wezterm`
+- `ph uninstall wezterm`
 - same-key `Ctrl+V` interception with passthrough on local sessions
 
 Acceptance criteria:
@@ -231,7 +231,7 @@ Why WezTerm first:
 
 Deliverables:
 
-- `iph hook kitty ...`
+- `ph hook kitty ...`
 - Kitty config managed block
 - text injection via Kitty remote control
 - passthrough-key replay support
@@ -247,9 +247,9 @@ Acceptance criteria:
 Deliverables:
 
 - minimal Python bridge script under managed install
-- `iph hook iterm2 ...`
-- `iph install iterm2`
-- `iph uninstall iterm2`
+- `ph hook iterm2 ...`
+- `ph install iterm2`
+- `ph uninstall iterm2`
 
 Acceptance criteria:
 
@@ -261,16 +261,16 @@ Acceptance criteria:
 
 Deliverables:
 
-- `iph doctor` for environment checks
-- `iph gc` for explicit cleanup
+- `ph doctor` for environment checks
+- `ph gc` for explicit cleanup
 - best-effort cleanup on upload
 - concise stderr messages and optional terminal-native notifications where trivial
 - installation and troubleshooting docs
 
 Acceptance criteria:
 
-- `iph doctor` can detect missing `ssh`, `scp`, clipboard access issues, and config paths
-- `iph gc --host <target>` removes expired staged files without affecting fresh uploads
+- `ph doctor` can detect missing `ssh`, `scp`, clipboard access issues, and config paths
+- `ph gc --host <target>` removes expired staged files without affecting fresh uploads
 - debug output is useful without requiring a telemetry system
 
 ## 8. UX Rules During Implementation
@@ -281,7 +281,7 @@ The implementation should preserve these behaviors across all phases:
 2. Never paste placeholder or partial garbage on failure.
 3. Keep success-path interaction silent: upload and paste only.
 4. Prefer terse local error messaging over modal UX.
-5. Make `iph attach` the reliable fallback whenever same-key integration cannot decide safely.
+5. Make `ph attach` the reliable fallback whenever same-key integration cannot decide safely.
 
 ## 9. Testing Strategy
 
@@ -342,7 +342,7 @@ To avoid over-engineering, do not add these in the MVP:
 The MVP is done when all of the following are true:
 
 - a user can copy an image locally, press `Ctrl+V` in WezTerm, Kitty, or iTerm2 while in a one-hop SSH session, and get a remote file path pasted into the active pane
-- a user can run `iph attach ./file.pdf` and get the remote path pasted or printed
+- a user can run `ph attach ./file.pdf` and get the remote path pasted or printed
 - local sessions preserve normal paste behavior
 - the project can be installed without any remote daemon or per-host remote setup beyond existing SSH access
 - the codebase remains a small Rust CLI with thin adapter assets and clear test coverage around the risky logic

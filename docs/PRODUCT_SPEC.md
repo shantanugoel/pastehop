@@ -1,4 +1,4 @@
-# Image Paste Helper Product Spec
+# PasteHop Product Spec
 
 Date: March 10, 2026
 Status: Draft MVP spec
@@ -6,13 +6,13 @@ Primary implementation language: Rust
 
 ## 1. Summary
 
-`image-paste-helper` is a local companion tool for terminal-based AI agents running on remote machines.
+`pastehop` is a local companion tool for terminal-based AI agents running on remote machines.
 
 Its core job is:
 
 1. User presses the same image-paste key they already use in coding TUIs, typically `Ctrl+V`.
-2. If the active pane is a remote SSH session and the local clipboard contains an image or file payload, the helper uploads that payload to the remote host.
-3. The helper pastes the resulting remote path into the active terminal pane.
+2. If the active pane is a remote SSH session and the local clipboard contains an image or file payload, PasteHop uploads that payload to the remote host.
+3. PasteHop pastes the resulting remote path into the active terminal pane.
 4. The remote TUI consumes that path as if the user had manually staged and pasted a file path.
 
 The first release is optimized for remote coding-agent image paste, not generic clipboard sync.
@@ -66,7 +66,7 @@ The missing capability is not "remote clipboard access" in general. The missing 
 3. User starts `codex` inside that remote shell, optionally inside tmux or zellij.
 4. User copies an image locally.
 5. User presses `Ctrl+V`.
-6. The helper uploads the image to the remote host and pastes a remote path like `~/.cache/image-paste-helper/2026-03-10/clipboard-193455.png`.
+6. PasteHop uploads the image to the remote host and pastes a remote path like `~/.cache/pastehop/2026-03-10/clipboard-193455.png`.
 
 ### Story B: Remote Claude Code image paste
 
@@ -75,8 +75,8 @@ Same as Story A, but the pasted artifact is a remote image path that Claude Code
 ### Story C: General attach flow
 
 1. User has a local file they want to share with a remote agent.
-2. User runs `iph attach path/to/file.pdf`.
-3. The helper uploads the file to the remote host and pastes the resulting remote path into the current pane.
+2. User runs `ph attach path/to/file.pdf`.
+3. PasteHop uploads the file to the remote host and pastes the resulting remote path into the current pane.
 
 ## 6. Product Positioning
 
@@ -95,7 +95,7 @@ This is the MVP and the main product.
 
 This broadens the product beyond coding agents.
 
-- Triggered by `iph attach ...` or optional terminal-specific bindings.
+- Triggered by `ph attach ...` or optional terminal-specific bindings.
 - Accepts local file paths and later clipboard file/image payloads.
 - Uploads to remote and pastes remote path text.
 
@@ -110,7 +110,7 @@ Reasons:
 - It works across agents without needing app changes.
 - It works for images and arbitrary files.
 - It works through tmux and zellij because they only need to pass text.
-- It keeps the local helper independent from any one agent protocol.
+- It keeps the local tool independent from any one agent protocol.
 
 ## 8. Support Tiers
 
@@ -120,7 +120,7 @@ Reasons:
 - Kitty
 - iTerm2 on macOS
 
-These terminals have enough local scripting or control APIs to intercept a key, run a local helper, and inject text back into the active pane.
+These terminals have enough local scripting or control APIs to intercept a key, run the local tool, and inject text back into the active pane.
 
 ### Tier B: Assisted support
 
@@ -129,7 +129,7 @@ These terminals have enough local scripting or control APIs to intercept a key, 
 - GNOME Terminal
 - Terminal.app
 
-These terminals do not currently offer a clean cross-platform same-key integration path for this use case. They will use `iph attach` first, and may get terminal-specific integrations later.
+These terminals do not currently offer a clean cross-platform same-key integration path for this use case. They will use `ph attach` first, and may get terminal-specific integrations later.
 
 ### Tier C: Premium future integrations
 
@@ -187,7 +187,7 @@ If remote detection fails or upload fails:
 - do not paste partial garbage
 - show a short local notification where the terminal supports it
 - print a terse status line in stderr or terminal logs
-- preserve the ability to retry with `iph attach`
+- preserve the ability to retry with `ph attach`
 
 ### UX 4: Zero remote install for common case
 
@@ -198,54 +198,54 @@ The first successful upload to a host should work as long as the user can alread
 ### Flow A: Successful remote image paste
 
 1. Terminal intercepts `Ctrl+V`.
-2. Adapter calls `iph hook ...` with terminal context.
-3. Helper checks clipboard payload types.
-4. Helper resolves current remote target.
-5. Helper materializes clipboard image as a temp PNG.
-6. Helper uploads it to remote staging dir.
-7. Helper returns an inject plan containing remote path text.
+2. Adapter calls `ph hook ...` with terminal context.
+3. PasteHop checks clipboard payload types.
+4. PasteHop resolves the current remote target.
+5. PasteHop materializes the clipboard image as a temp PNG.
+6. PasteHop uploads it to the remote staging dir.
+7. PasteHop returns an inject plan containing remote path text.
 8. Terminal adapter injects text as paste-style input.
 
 ### Flow B: Local coding-agent image paste
 
 1. Terminal intercepts `Ctrl+V`.
-2. Helper sees no remote target.
-3. Helper returns `passthrough-key`.
+2. PasteHop sees no remote target.
+3. PasteHop returns `passthrough-key`.
 4. Terminal adapter replays `Ctrl+V` to the app.
 
 ### Flow C: Clipboard contains plain text
 
 1. Terminal intercepts `Ctrl+V`.
-2. Helper sees text-only clipboard or unsupported clipboard payload.
-3. Helper returns `passthrough-key`.
+2. PasteHop sees text-only clipboard or an unsupported clipboard payload.
+3. PasteHop returns `passthrough-key`.
 4. Terminal adapter replays `Ctrl+V`.
 
 This is acceptable because the primary workflow here is coding-agent image paste, not terminal text paste.
 
 ### Flow D: Explicit attach
 
-1. User runs `iph attach ./diagram.png`.
-2. Helper resolves current remote target from the active terminal context or explicit `--host`.
-3. Helper uploads file.
-4. Helper pastes remote path into the active pane or prints it to stdout if `--print` is set.
+1. User runs `ph attach ./diagram.png`.
+2. PasteHop resolves the current remote target from the active terminal context or explicit `--host`.
+3. PasteHop uploads the file.
+4. PasteHop pastes the remote path into the active pane or prints it to stdout if `--print` is set.
 
 ## 12. CLI Surface
 
-Binary name: `iph`
+Binary name: `ph`
 
 ### Commands
 
-- `iph attach <paths...>`
-- `iph attach --clipboard`
-- `iph hook wezterm ...`
-- `iph hook kitty ...`
-- `iph hook iterm2 ...`
-- `iph doctor`
-- `iph install wezterm`
-- `iph install kitty`
-- `iph install iterm2`
-- `iph uninstall <terminal>`
-- `iph gc`
+- `ph attach <paths...>`
+- `ph attach --clipboard`
+- `ph hook wezterm ...`
+- `ph hook kitty ...`
+- `ph hook iterm2 ...`
+- `ph doctor`
+- `ph install wezterm`
+- `ph install kitty`
+- `ph install iterm2`
+- `ph uninstall <terminal>`
+- `ph gc`
 
 ### Important flags
 
@@ -262,7 +262,7 @@ The core business logic lives in Rust. Terminal adapters are intentionally thin.
 
 ### Common contract
 
-Each adapter invokes the helper and receives a small JSON result:
+Each adapter invokes PasteHop and receives a small JSON result:
 
 ```json
 {
@@ -287,7 +287,7 @@ Implementation:
 Implementation:
 
 - Installer adds key mappings to `kitty.conf`.
-- Mapping launches local `iph hook kitty ...`.
+- Mapping launches local `ph hook kitty ...`.
 - The hook uses Kitty remote control to inject text into the active window.
 - On `passthrough_key`, it sends the original key to the active window.
 
@@ -297,7 +297,7 @@ Implementation:
 
 - Installer drops a small Python API script under the iTerm2 scripts directory.
 - User binds `Ctrl+V` to `Invoke Script Function`.
-- The Python bridge calls `iph hook iterm2 ...`.
+- The Python bridge calls `ph hook iterm2 ...`.
 - On `inject_text`, the script uses `Session.async_send_text(...)`.
 - On `passthrough_key`, the script replays the original key to the active session.
 
@@ -309,7 +309,7 @@ Target resolution priority:
 2. Local foreground process inspection for `ssh`, `ssh -J`, `wezterm ssh`, `kitten ssh`, or similar.
 3. Explicit `--host`.
 
-If no remote host is resolved, the helper returns `passthrough-key`.
+If no remote host is resolved, PasteHop returns `passthrough-key`.
 
 ### MVP assumptions
 
@@ -325,11 +325,11 @@ If the user SSHes from the first remote host to a second host, the local machine
 
 Default remote staging root:
 
-- `~/.cache/image-paste-helper/uploads/`
+- `~/.cache/pastehop/uploads/`
 
 Per-upload path pattern:
 
-- `~/.cache/image-paste-helper/uploads/YYYY-MM-DD/<timestamp>-<kind>.<ext>`
+- `~/.cache/pastehop/uploads/YYYY-MM-DD/<timestamp>-<kind>.<ext>`
 
 Examples:
 
@@ -403,7 +403,7 @@ Default profile: `plain-path`
 
 Examples:
 
-- `/home/user/.cache/image-paste-helper/uploads/2026-03-10/193455-clipboard.png`
+- `/home/user/.cache/pastehop/uploads/2026-03-10/193455-clipboard.png`
 
 Optional profiles:
 
@@ -417,9 +417,9 @@ The default should be `plain-path` because it is the least opinionated and works
 ### Principles
 
 - Only user-initiated keypresses or explicit CLI calls can trigger upload.
-- The helper must never allow a remote process to silently read the local clipboard.
-- The helper must use the user's existing SSH trust model.
-- The helper must fail closed when target resolution is ambiguous.
+- PasteHop must never allow a remote process to silently read the local clipboard.
+- PasteHop must use the user's existing SSH trust model.
+- PasteHop must fail closed when target resolution is ambiguous.
 
 ### First-use host confirmation
 
@@ -443,7 +443,7 @@ Default limits:
 
 Local config file:
 
-- `~/.config/image-paste-helper/config.toml`
+- `~/.config/pastehop/config.toml`
 
 Key settings:
 
@@ -463,7 +463,7 @@ Default remote TTL:
 Cleanup behavior:
 
 - best-effort cleanup on each upload for files older than TTL
-- `iph gc --host <target>` for explicit cleanup
+- `ph gc --host <target>` for explicit cleanup
 
 Cleanup failures must never block a successful upload.
 
@@ -471,10 +471,10 @@ Cleanup failures must never block a successful upload.
 
 ### Crates
 
-- `iph-core`
-- `iph-cli`
-- `iph-terminal-wezterm` support code generated by installer
-- `iph-terminal-iterm2` support script generated by installer
+- `pastehop-core`
+- `pastehop-cli`
+- `pastehop-terminal-wezterm` support code generated by installer
+- `pastehop-terminal-iterm2` support script generated by installer
 
 ### Major modules
 
@@ -509,7 +509,7 @@ Platform-specific clipboard support may require small macOS-specific modules bey
 
 ## 23. Installer Design
 
-`iph install <terminal>` should:
+`ph install <terminal>` should:
 
 1. detect config file location
 2. add a clearly marked managed block
@@ -517,7 +517,7 @@ Platform-specific clipboard support may require small macOS-specific modules bey
 4. print exact changes made
 5. avoid duplicate installs
 
-Managed blocks should be removable by `iph uninstall <terminal>`.
+Managed blocks should be removable by `ph uninstall <terminal>`.
 
 ## 24. Observability
 
@@ -526,12 +526,12 @@ The product should not require telemetry.
 Local logs:
 
 - default off
-- debug logs in `~/.cache/image-paste-helper/logs/`
-- `iph doctor` prints environment and capability checks
+- debug logs in `~/.cache/pastehop/logs/`
+- `ph doctor` prints environment and capability checks
 
 ## 25. Performance Targets
 
-- helper startup to action decision: under 100 ms on warm local path
+- PasteHop startup to action decision: under 100 ms on warm local path
 - 5 MB image upload on a normal SSH link: under 2 seconds
 - path injection after successful upload: immediate
 
@@ -569,7 +569,7 @@ Local logs:
 Trade-off:
 
 - accept Tier A support first
-- provide `iph attach` everywhere else
+- provide `ph attach` everywhere else
 
 ### Risk: nested SSH is ambiguous
 
@@ -609,6 +609,6 @@ Build the MVP around remote coding-agent image paste first:
 2. WezTerm adapter
 3. Kitty adapter
 4. iTerm2 adapter
-5. explicit `iph attach` for generic files
+5. explicit `ph attach` for generic files
 
 That gets the highest-value workflow working quickly without betting on unsupported terminal behavior.
