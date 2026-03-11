@@ -49,6 +49,11 @@ ph doctor
 # 2. Install the integration for your terminal (one-time setup)
 ph install wezterm    # or: ph install kitty / ph install iterm2
 
+# 3a. iTerm2 only: iTerm2 cannot auto-detect SSH sessions, so you
+#     must configure a default host in ~/.config/pastehop/config.toml
+#     (see config.example.toml). WezTerm and Kitty detect the active
+#     SSH session automatically — skip this step for those terminals.
+
 # 3. That's it. Now:
 #    - Copy an image on your local machine
 #    - Focus a remote SSH session in your terminal
