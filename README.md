@@ -1,15 +1,21 @@
 # PasteHop
 
-Paste local images and files into remote terminal agent sessions over SSH.
+Terminal AI coding agents like Claude Code, Codex, and Pi can accept image
+paths as input -- but when you're SSH'd into a remote box, there's no way to
+paste a local screenshot or diagram into that session. Your clipboard lives on
+your machine; the agent runs on the server.
 
-PasteHop uploads a clipboard image or local file to the current remote host and injects the resulting remote path back into the active terminal pane. The CLI binary is `ph`.
+PasteHop bridges that gap. It uploads a clipboard image or local file to the
+remote host over SSH and injects the resulting remote path straight into the
+active terminal pane. To the agent it looks like you just typed a file path.
+The CLI binary is `ph`.
 
 ## What It Does
 
 - Preserves the common `Ctrl+V` flow in supported terminals
-- Uploads clipboard images or explicit files to a remote staging directory
-- Pastes a remote path that tools like Codex or Claude Code can consume
-- Uses the system `ssh` and `scp`; no remote daemon required
+- Uploads clipboard images or explicit files to a remote staging directory over SSH
+- Pastes a remote path that the agent can consume immediately
+- Uses the system `ssh` and `scp`; no remote daemon or server-side install required
 
 ## Supported Terminals
 
