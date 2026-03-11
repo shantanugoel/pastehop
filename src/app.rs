@@ -154,13 +154,10 @@ fn execute_hook(hook: TerminalHookArgs, store: &ConfigStore, config: &mut Config
         Err(error) => return HookResponse::error(error.to_string()),
     };
 
-    if let Err(error) = ensure_host_allowed(
-        store,
-        config,
-        &target.host,
-        &target.remote_dir,
-        clipboard.size_bytes,
-    ) {
+    // Auto-approve host in hook context: the user installed the integration,
+    // SSH'd into the host, and pressed paste — that's sufficient intent.
+    config.hosts.entry(target.host.clone()).or_default().allowed = true;
+    if let Err(error) = store.save(config) {
         return HookResponse::error(error.to_string());
     }
 

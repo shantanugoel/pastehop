@@ -20,3 +20,7 @@ pub fn config_path() -> PathBuf {
 pub fn render(binary_path: &str) -> String {
     include_str!("../../assets/wezterm/managed_block.lua").replace("__PH_BINARY__", binary_path)
 }
+
+pub fn default_config() -> &'static str {
+    "local wezterm = require 'wezterm'\nlocal config = wezterm.config_builder()\n\nreturn config\n"
+}

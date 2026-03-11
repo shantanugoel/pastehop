@@ -6,6 +6,12 @@ table.insert(config.keys, {
   key = "v",
   mods = "CTRL",
   action = wezterm.action_callback(function(window, pane)
+    local fg_process = tostring(pane:get_foreground_process_name() or "")
+    local ok, info = pcall(pane.get_foreground_process_info, pane)
+    if ok and info and info.argv then
+      fg_process = table.concat(info.argv, " ")
+    end
+
     local success, stdout, stderr = wezterm.run_child_process({
       "__PH_BINARY__",
       "hook",
@@ -15,14 +21,14 @@ table.insert(config.keys, {
       "--domain",
       tostring(pane:get_domain_name() or ""),
       "--foreground-process",
-      tostring(pane:get_foreground_process_name() or ""),
+      fg_process,
       "--cwd",
       tostring(pane:get_current_working_dir() or ""),
     })
 
     if not success then
       window:toast_notification("pastehop", stderr or "hook failed", nil, 3000)
-      window:perform_action(wezterm.action.SendKey({ key = "v", mods = "CTRL" }), pane)
+      window:perform_action(wezterm.action.PasteFrom("Clipboard"), pane)
       return
     end
 
@@ -30,7 +36,7 @@ table.insert(config.keys, {
     if response.action == "inject_text" and response.text then
       pane:send_paste(response.text)
     elseif response.action == "passthrough_key" then
-      window:perform_action(wezterm.action.SendKey({ key = "v", mods = "CTRL" }), pane)
+      window:perform_action(wezterm.action.PasteFrom("Clipboard"), pane)
     elseif response.action == "error" and response.message then
       window:toast_notification("pastehop", response.message, nil, 3000)
     end

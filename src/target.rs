@@ -87,7 +87,8 @@ pub fn parse_foreground_process(process: &str) -> Option<String> {
         return None;
     }
 
-    match tokens[0] {
+    let basename = tokens[0].rsplit('/').next().unwrap_or(tokens[0]);
+    match basename {
         "ssh" => parse_ssh_target(&tokens[1..]),
         "wezterm" if tokens.get(1) == Some(&"ssh") => parse_simple_host(&tokens[2..]),
         "kitten" if tokens.get(1) == Some(&"ssh") => parse_simple_host(&tokens[2..]),
@@ -198,6 +199,14 @@ mod tests {
             Some("user@devbox".to_owned())
         );
         assert_eq!(parse_foreground_process("bash"), None);
+        assert_eq!(
+            parse_foreground_process("/usr/bin/ssh devbox"),
+            Some("devbox".to_owned())
+        );
+        assert_eq!(
+            parse_foreground_process("/usr/bin/ssh -J jump user@devbox"),
+            Some("user@devbox".to_owned())
+        );
     }
 
     #[test]

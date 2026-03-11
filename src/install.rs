@@ -22,6 +22,7 @@ pub fn install_terminal(terminal: SupportedTerminal) -> Result<String, PasteHopE
         SupportedTerminal::Wezterm => {
             let path = wezterm::config_path();
             let rendered = wezterm::render(&binary_path);
+            ensure_wezterm_scaffold(&path)?;
             install_managed_block(&path, &rendered, WEZTERM_START, WEZTERM_END, true)?;
             Ok(format!(
                 "installed wezterm integration at {}",
@@ -126,6 +127,14 @@ fn resolve_binary_path() -> Result<String, PasteHopError> {
         })
 }
 
+fn ensure_wezterm_scaffold(path: &Path) -> Result<(), PasteHopError> {
+    let existing = read_optional(path)?;
+    if existing.trim().is_empty() {
+        write_support_file(path, wezterm::default_config(), false)?;
+    }
+    Ok(())
+}
+
 fn read_optional(path: &Path) -> Result<String, PasteHopError> {
     if !path.exists() {
         return Ok(String::new());
@@ -202,7 +211,7 @@ fn insert_before_last_return(existing: &str, block: &str) -> String {
     if let Some(index) = existing.rfind("\nreturn") {
         let (before, after) = existing.split_at(index + 1);
         format!(
-            "{}{}\n{}",
+            "{}\n\n{}\n{}",
             before.trim_end_matches('\n'),
             block.trim(),
             after
@@ -267,6 +276,34 @@ mod tests {
             env::remove_var("PH_BINARY_PATH");
             env::remove_var("PH_KITTY_CONFIG_PATH");
             env::remove_var("PH_KITTY_BRIDGE_PATH");
+        }
+    }
+
+    #[test]
+    fn wezterm_install_creates_scaffold_for_empty_config() {
+        let temp_dir = TempDir::new().expect("temp dir should exist");
+        let config_path = temp_dir.path().join("wezterm.lua");
+
+        unsafe {
+            env::set_var("PH_BINARY_PATH", "/usr/local/bin/ph");
+            env::set_var("PH_WEZTERM_CONFIG_PATH", &config_path);
+        }
+
+        install_terminal(SupportedTerminal::Wezterm).expect("install should succeed");
+        let config = fs::read_to_string(&config_path).expect("config should exist");
+        assert!(config.contains("local wezterm = require 'wezterm'"));
+        assert!(config.contains("return config"));
+        assert!(config.contains("-- BEGIN PASTEHOP MANAGED BLOCK"));
+        // Block should be before return
+        let block_index = config
+            .find("-- BEGIN PASTEHOP MANAGED BLOCK")
+            .expect("block should exist");
+        let return_index = config.find("return config").expect("return should exist");
+        assert!(block_index < return_index);
+
+        unsafe {
+            env::remove_var("PH_BINARY_PATH");
+            env::remove_var("PH_WEZTERM_CONFIG_PATH");
         }
     }
 
