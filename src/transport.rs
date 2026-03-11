@@ -24,7 +24,7 @@ impl Transport {
         let remote_dir = remote_directory_for(remote_path);
         let script = format!(
             "mkdir -p -- {}",
-            shell_quote(&remote_dir.display().to_string())
+            shell_quote_path(&remote_dir.display().to_string())
         );
         self.run_ssh(host, &script).map(|_| ())
     }
@@ -64,7 +64,7 @@ impl Transport {
         let minutes = ttl_hours.saturating_mul(60);
         let script = format!(
             "find {} -type f -mmin +{} -delete 2>/dev/null || true",
-            shell_quote(remote_root),
+            shell_quote_path(remote_root),
             minutes
         );
         self.run_ssh(host, &script).map(|_| ())
@@ -81,13 +81,13 @@ impl Transport {
         let script = if dry_run {
             format!(
                 "find {} -type f -mmin +{} -print 2>/dev/null || true",
-                shell_quote(remote_root),
+                shell_quote_path(remote_root),
                 minutes
             )
         } else {
             format!(
                 "find {} -type f -mmin +{} -print -delete 2>/dev/null || true",
-                shell_quote(remote_root),
+                shell_quote_path(remote_root),
                 minutes
             )
         };
@@ -101,11 +101,10 @@ impl Transport {
     }
 
     fn run_ssh(&self, host: &str, script: &str) -> Result<String, PasteHopError> {
+        let remote_command = format!("sh -lc {}", shell_quote(script));
         let output = Command::new(&self.ssh_bin)
             .arg(host)
-            .arg("sh")
-            .arg("-lc")
-            .arg(script)
+            .arg(&remote_command)
             .output()
             .map_err(|source| PasteHopError::SpawnTransport {
                 command: self.ssh_bin.clone(),
@@ -135,13 +134,41 @@ fn shell_quote(value: &str) -> String {
     format!("'{}'", value.replace('\'', "'\"'\"'"))
 }
 
+/// Quote a remote path for use in a shell command, expanding `~/` via `$HOME`.
+fn shell_quote_path(value: &str) -> String {
+    if let Some(rest) = value.strip_prefix("~/") {
+        format!(
+            "\"$HOME/{}\"",
+            rest.replace('\\', "\\\\")
+                .replace('"', "\\\"")
+                .replace('$', "\\$")
+                .replace('`', "\\`")
+        )
+    } else {
+        shell_quote(value)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::{env, fs, os::unix::fs::PermissionsExt, path::Path};
 
     use tempfile::TempDir;
 
-    use super::Transport;
+    use super::{Transport, shell_quote_path};
+
+    #[test]
+    fn shell_quote_path_expands_tilde() {
+        assert_eq!(
+            shell_quote_path("~/.cache/pastehop/uploads"),
+            "\"$HOME/.cache/pastehop/uploads\""
+        );
+    }
+
+    #[test]
+    fn shell_quote_path_leaves_absolute_paths_alone() {
+        assert_eq!(shell_quote_path("/srv/uploads"), "'/srv/uploads'");
+    }
 
     #[test]
     fn transport_uses_fake_ssh_and_scp_from_env() {
@@ -195,8 +222,10 @@ mod tests {
         let scp_log =
             fs::read_to_string(logs_dir.join("scp.log")).expect("scp log should be readable");
 
-        assert!(ssh_log.contains("devbox sh -lc mkdir -p -- '/srv/uploads/2025-11-11'"));
-        assert!(ssh_log.contains("find '/srv/uploads' -type f -mmin +1440 -delete"));
+        assert!(
+            ssh_log.contains("devbox sh -lc 'mkdir -p -- '\"'\"'/srv/uploads/2025-11-11'\"'\"''")
+        );
+        assert!(ssh_log.contains("sh -lc 'find '\"'\"'/srv/uploads'\"'\"' -type f -mmin +1440 -delete 2>/dev/null || true'"));
         assert!(listed.is_empty());
         assert!(scp_log.contains("diagram.png devbox:/srv/uploads/2025-11-11/file.png"));
 

@@ -1,0 +1,50 @@
+# PasteHop configuration
+# Place this file at: ~/.config/pastehop/config.toml
+# Or set PH_CONFIG_PATH to a custom location.
+# XDG_CONFIG_HOME is also respected.
+
+# Terminal profile to use by default when pasting images.
+# Supported values depend on your terminal: "iterm2", "kitty", "wezterm"
+# If unset, pastehop will auto-detect.
+# default_terminal_profile = "kitty"
+
+# Keybindings that trigger a paste in the target application.
+# Default: ["CTRL+V"]
+# enabled_keybindings = ["CTRL+V"]
+
+# How pasted file paths are formatted when inserted into the target app.
+# Options: "plain-path", "at-path" (@/path), "quoted-path" ("/path")
+# Default: "plain-path"
+# default_path_profile = "plain-path"
+
+# Hours before uploaded files are automatically cleaned up.
+# Default: 24
+# cleanup_ttl_hours = 24
+
+# --------------------------------------------------------------------------
+# Size limits
+# --------------------------------------------------------------------------
+[size_limits]
+# Maximum size of a single file in bytes (default: 25 MiB)
+# max_single_file_bytes = 26214400
+
+# Maximum total size of all files in a single paste in bytes (default: 100 MiB)
+# max_total_bytes = 104857600
+
+# Maximum number of files in a single paste (default: 10)
+# max_files = 10
+
+# --------------------------------------------------------------------------
+# Remote hosts
+# --------------------------------------------------------------------------
+# Each [hosts.<name>] section configures a remote machine that pastehop
+# is allowed to transfer files to/from over SSH.
+#
+# Example:
+#
+# [hosts.devbox]
+# allowed = true
+# remote_dir = "~/.cache/pastehop/uploads"   # default if omitted
+#
+# [hosts.prod-server]
+# allowed = false   # explicitly block this host
