@@ -68,7 +68,7 @@ jobs:
           Compress-Archive -Path "target/${{ matrix.target }}/release/ph.exe" -DestinationPath "ph-${{ matrix.target }}.zip"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ph-${{ matrix.target }}
           path: ph-${{ matrix.target }}.${{ matrix.archive }}
