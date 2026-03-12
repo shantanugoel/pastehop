@@ -1,27 +1,21 @@
 # PasteHop
 
 Terminal AI coding agents like Claude Code, Codex, and Pi can accept image
-paths as input -- but when you're SSH'd into a remote box, there's no way to
-paste a local screenshot or diagram into that session. Your clipboard lives on
-your machine; the agent runs on the server.
-
-PasteHop bridges that gap. It uploads a clipboard image or local file to the
-remote host over SSH and injects the resulting remote path straight into the
-active terminal pane. To the agent it looks like you just typed a file path.
-The CLI binary is `ph`.
+paths as input, but when you're SSH'd into a remote box your clipboard still
+lives on your local machine. PasteHop uploads a local clipboard image or file
+to the remote host over SSH and pastes the resulting remote path into the
+active terminal pane. The CLI binary is `ph`.
 
 ## What It Does
 
-- Preserves the common `Ctrl+V` flow in supported terminals
+- Preserves the common `Ctrl+V` flow in supported terminals (Currently WezTerm)
 - Uploads clipboard images or explicit files to a remote staging directory over SSH
 - Pastes a remote path that the agent can consume immediately
 - Uses the system `ssh` and `scp`; no remote daemon or server-side install required
 
-## Supported Terminals
+## Direct Integration Terminals
 
 - WezTerm
-- Kitty
-- iTerm2
 
 ## Install
 
@@ -46,17 +40,12 @@ automatically uploads the clipboard image and pastes the remote path.
 # 1. Check that your environment is ready (ssh, scp, clipboard access)
 ph doctor
 
-# 2. Install the integration for your terminal (one-time setup)
-ph install wezterm    # or: ph install kitty / ph install iterm2
-
-# 3a. iTerm2 only: iTerm2 cannot auto-detect SSH sessions, so you
-#     must configure a default host in ~/.config/pastehop/config.toml
-#     (see config.example.toml). WezTerm and Kitty detect the active
-#     SSH session automatically — skip this step for those terminals.
+# 2. Install the WezTerm integration
+ph install wezterm
 
 # 3. That's it. Now:
 #    - Copy an image on your local machine
-#    - Focus a remote SSH session in your terminal
+#    - Focus a remote SSH session in WezTerm
 #    - Press Ctrl+V
 #    - PasteHop uploads the image and pastes the remote path
 ```
@@ -64,7 +53,7 @@ ph install wezterm    # or: ph install kitty / ph install iterm2
 ### Option B: Manual via the command line
 
 Use `ph attach` directly when you want explicit control, are scripting, or
-don't use a supported terminal.
+don't use the WezTerm integration.
 
 ```bash
 # Upload a local file to a remote host and print the remote path
@@ -97,7 +86,7 @@ ph attach ./photo.jpg --host user@devbox --copy-path
 # Preview what would be uploaded without actually doing it
 ph attach ./diagram.png --host user@devbox --dry-run
 
-# Use a specific path format (useful for tools that expect @path or "path")
+# Use a specific path format
 ph attach ./spec.pdf --host user@devbox --profile at-path
 ph attach ./spec.pdf --host user@devbox --profile quoted-path
 
@@ -105,49 +94,33 @@ ph attach ./spec.pdf --host user@devbox --profile quoted-path
 ph attach ./data.csv --host user@devbox --remote-dir /tmp/uploads
 ```
 
-### install / uninstall -- set up or remove terminal Ctrl+V integration
+### install / uninstall -- set up or remove WezTerm Ctrl+V integration
 
 ```bash
-# Install the hook for your terminal (pick one)
 ph install wezterm
-ph install kitty
-ph install iterm2
-
-# Remove it later if you no longer need it
 ph uninstall wezterm
 ```
 
 ### doctor -- check that your environment is ready
 
 ```bash
-# Verifies ssh, scp, clipboard access, and config location
 ph doctor
 ```
 
 ### gc -- clean up expired remote uploads
 
 ```bash
-# Remove uploads older than the configured TTL (default 24h)
 ph gc --host user@devbox
-
-# See what would be removed without deleting anything
 ph gc --host user@devbox --dry-run
 ```
 
 ## Configuration
 
-Configuration is **optional**. PasteHop works out of the box with sensible
-defaults. A config file is only needed if you want to skip typing `--host`
-every time, pre-approve hosts, adjust size limits, or change the cleanup TTL.
+Configuration is optional. Editing the config file is only needed if you want to
+pre-approve hosts, adjust size limits, or change the cleanup TTL.
 
-See [`config.example.toml`](config.example.toml) for all available options
-with descriptions and defaults.
+See [`config.example.toml`](config.example.toml) for all available options.
 
-To use a config, copy the example and edit it:
-
-```bash
-cp config.example.toml ~/.config/pastehop/config.toml
-```
 
 The config path can also be set via `PH_CONFIG_PATH` or `XDG_CONFIG_HOME`.
 

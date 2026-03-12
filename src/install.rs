@@ -1,19 +1,15 @@
 use std::{
     env, fs,
-    os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
 };
 
-use crate::{
-    cli::SupportedTerminal,
-    errors::PasteHopError,
-    terminal::{iterm2, kitty, wezterm},
-};
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+
+use crate::{cli::SupportedTerminal, errors::PasteHopError, terminal::wezterm};
 
 const WEZTERM_START: &str = "-- BEGIN PASTEHOP MANAGED BLOCK";
 const WEZTERM_END: &str = "-- END PASTEHOP MANAGED BLOCK";
-const KITTY_START: &str = "# BEGIN PASTEHOP MANAGED BLOCK";
-const KITTY_END: &str = "# END PASTEHOP MANAGED BLOCK";
 
 pub fn install_terminal(terminal: SupportedTerminal) -> Result<String, PasteHopError> {
     let binary_path = resolve_binary_path()?;
@@ -29,22 +25,6 @@ pub fn install_terminal(terminal: SupportedTerminal) -> Result<String, PasteHopE
                 path.display()
             ))
         }
-        SupportedTerminal::Kitty => {
-            let path = kitty::config_path();
-            let bridge_path = kitty::bridge_path();
-            let rendered = kitty::render_config(&bridge_path.display().to_string());
-            install_managed_block(&path, &rendered, KITTY_START, KITTY_END, false)?;
-            write_support_file(&bridge_path, &kitty::render_bridge(&binary_path), true)?;
-            Ok(format!("installed kitty integration at {}", path.display()))
-        }
-        SupportedTerminal::Iterm2 => {
-            let path = iterm2::script_path();
-            write_support_file(&path, &iterm2::render(&binary_path), true)?;
-            Ok(format!(
-                "installed iterm2 integration at {}",
-                path.display()
-            ))
-        }
     }
 }
 
@@ -55,31 +35,6 @@ pub fn uninstall_terminal(terminal: SupportedTerminal) -> Result<String, PasteHo
             remove_managed_block(&path, WEZTERM_START, WEZTERM_END)?;
             Ok(format!(
                 "removed wezterm integration from {}",
-                path.display()
-            ))
-        }
-        SupportedTerminal::Kitty => {
-            let path = kitty::config_path();
-            remove_managed_block(&path, KITTY_START, KITTY_END)?;
-            let bridge_path = kitty::bridge_path();
-            if bridge_path.exists() {
-                fs::remove_file(&bridge_path).map_err(|source| PasteHopError::InstallIo {
-                    path: bridge_path.clone(),
-                    source,
-                })?;
-            }
-            Ok(format!("removed kitty integration from {}", path.display()))
-        }
-        SupportedTerminal::Iterm2 => {
-            let path = iterm2::script_path();
-            if path.exists() {
-                fs::remove_file(&path).map_err(|source| PasteHopError::InstallIo {
-                    path: path.clone(),
-                    source,
-                })?;
-            }
-            Ok(format!(
-                "removed iterm2 integration from {}",
                 path.display()
             ))
         }
@@ -181,6 +136,7 @@ fn write_support_file(path: &Path, contents: &str, executable: bool) -> Result<(
         }
     })?;
 
+    #[cfg(unix)]
     if executable {
         let mut permissions = fs::metadata(path)
             .map_err(|source| PasteHopError::InstallIo {
@@ -246,38 +202,7 @@ mod tests {
 
     use crate::cli::SupportedTerminal;
 
-    use super::{install_terminal, uninstall_terminal};
-
-    #[test]
-    fn kitty_install_is_idempotent_and_removable() {
-        let temp_dir = TempDir::new().expect("temp dir should exist");
-        let config_path = temp_dir.path().join("kitty.conf");
-        let bridge_path = temp_dir.path().join("ph-kitty-bridge.sh");
-
-        unsafe {
-            env::set_var("PH_BINARY_PATH", "/usr/local/bin/ph");
-            env::set_var("PH_KITTY_CONFIG_PATH", &config_path);
-            env::set_var("PH_KITTY_BRIDGE_PATH", &bridge_path);
-        }
-
-        install_terminal(SupportedTerminal::Kitty).expect("install should succeed");
-        install_terminal(SupportedTerminal::Kitty).expect("reinstall should stay idempotent");
-
-        let config = fs::read_to_string(&config_path).expect("config should exist");
-        assert_eq!(config.matches("# BEGIN PASTEHOP MANAGED BLOCK").count(), 1);
-        assert!(bridge_path.exists());
-
-        uninstall_terminal(SupportedTerminal::Kitty).expect("uninstall should succeed");
-        let removed = fs::read_to_string(&config_path).expect("config should still exist");
-        assert!(!removed.contains("PASTEHOP MANAGED BLOCK"));
-        assert!(!bridge_path.exists());
-
-        unsafe {
-            env::remove_var("PH_BINARY_PATH");
-            env::remove_var("PH_KITTY_CONFIG_PATH");
-            env::remove_var("PH_KITTY_BRIDGE_PATH");
-        }
-    }
+    use super::install_terminal;
 
     #[test]
     fn wezterm_install_creates_scaffold_for_empty_config() {

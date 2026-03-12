@@ -126,8 +126,6 @@ fn handle_hook(args: HookArgs) -> Result<()> {
     let mut config = store.load()?;
     let response = match args.terminal {
         HookTerminal::Wezterm(hook) => execute_hook(hook, &store, &mut config),
-        HookTerminal::Kitty(hook) => execute_hook(hook, &store, &mut config),
-        HookTerminal::Iterm2(hook) => execute_hook(hook, &store, &mut config),
     };
 
     let encoded = response

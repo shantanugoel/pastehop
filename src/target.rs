@@ -62,7 +62,7 @@ pub fn resolve_hook_target(context: &HookTargetContext, config: &Config) -> Opti
         });
     }
 
-    context
+    if let Some(target) = context
         .foreground_process
         .as_deref()
         .and_then(parse_foreground_process)
@@ -71,6 +71,11 @@ pub fn resolve_hook_target(context: &HookTargetContext, config: &Config) -> Opti
             host,
             source: ResolutionSource::ForegroundProcess,
         })
+    {
+        return Some(target);
+    }
+
+    None
 }
 
 pub fn parse_terminal_domain(domain: &str) -> Option<String> {
@@ -91,7 +96,6 @@ pub fn parse_foreground_process(process: &str) -> Option<String> {
     match basename {
         "ssh" => parse_ssh_target(&tokens[1..]),
         "wezterm" if tokens.get(1) == Some(&"ssh") => parse_simple_host(&tokens[2..]),
-        "kitten" if tokens.get(1) == Some(&"ssh") => parse_simple_host(&tokens[2..]),
         _ => None,
     }
 }
@@ -193,10 +197,6 @@ mod tests {
         assert_eq!(
             parse_foreground_process("wezterm ssh devbox"),
             Some("devbox".to_owned())
-        );
-        assert_eq!(
-            parse_foreground_process("kitten ssh user@devbox"),
-            Some("user@devbox".to_owned())
         );
         assert_eq!(parse_foreground_process("bash"), None);
         assert_eq!(

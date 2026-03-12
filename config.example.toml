@@ -4,9 +4,8 @@
 # XDG_CONFIG_HOME is also respected.
 
 # Terminal profile to use by default when pasting images.
-# Supported values depend on your terminal: "iterm2", "kitty", "wezterm"
-# If unset, pastehop will auto-detect.
-# default_terminal_profile = "kitty"
+# Supported values currently include: "wezterm"
+# default_terminal_profile = "wezterm"
 
 # Keybindings that trigger a paste in the target application.
 # Default: ["CTRL+V"]
@@ -38,7 +37,7 @@
 # Remote hosts
 # --------------------------------------------------------------------------
 # Each [hosts.<name>] section configures a remote machine that pastehop
-# is allowed to transfer files to/from over SSH.
+# is allowed to transfer files to over SSH.
 #
 # Example:
 #
