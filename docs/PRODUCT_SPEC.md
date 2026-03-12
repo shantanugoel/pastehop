@@ -18,7 +18,7 @@ Its core job is:
 
 ## Primary User Story
 
-1. User is in WezTerm on the local machine.
+1. User is in WezTerm or Kitty on the local machine.
 2. User SSHes to a Linux or macOS box.
 3. User starts `codex` or `claude` inside that remote shell, optionally inside tmux or zellij.
 4. User copies an image locally.
@@ -30,6 +30,7 @@ Its core job is:
 Included:
 
 - WezTerm same-key integration
+- Kitty same-key integration
 - clipboard image support
 - explicit local file upload support via CLI
 - one-hop SSH detection from the local terminal session
@@ -40,7 +41,7 @@ Included:
 
 Excluded for now:
 
-- terminal integrations beyond WezTerm
+- terminal integrations beyond WezTerm and Kitty
 - nested SSH beyond the first remote hop
 - remote shell integration requirement
 - bidirectional transfer
@@ -51,8 +52,11 @@ Excluded for now:
 - `ph attach <paths...>`
 - `ph attach --clipboard`
 - `ph hook wezterm ...`
+- `ph hook kitty ...`
 - `ph install wezterm`
+- `ph install kitty`
 - `ph uninstall wezterm`
+- `ph uninstall kitty`
 - `ph doctor`
 - `ph gc`
 
@@ -67,7 +71,7 @@ Important flags:
 
 ## Terminal Adapter Design
 
-The core business logic lives in Rust. The WezTerm adapter is intentionally thin.
+The core business logic lives in Rust. Terminal adapters are intentionally thin.
 
 Common hook result:
 
@@ -86,6 +90,13 @@ WezTerm adapter:
 - It inspects pane metadata such as foreground process and domain.
 - On `inject_text`, it pastes the returned path.
 - On `passthrough_key`, it replays the original key.
+
+Kitty adapter:
+
+- Installer adds a managed `pastehop.py` kitten and a `kitty.conf` keybinding.
+- The kitten runs with `no_ui=True`.
+- It uses Kitty remote control to read window metadata and replay native paste.
+- It relies on foreground `ssh` or `kitten ssh` command lines for host detection.
 
 ## Remote Target Resolution
 
@@ -139,7 +150,7 @@ Key settings:
 ## Future Work
 
 - optional remote shell integration for better host and cwd metadata
-- additional terminal integrations once the WezTerm path is solid
+- additional terminal integrations once the WezTerm and Kitty paths are solid
 - local file picker UI
 - multi-file clipboard batches
 - remote-to-local download symmetry

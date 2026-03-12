@@ -8,7 +8,7 @@ active terminal pane. The CLI binary is `ph`.
 
 ## What It Does
 
-- Preserves the common `Ctrl+V` flow in supported terminals (Currently WezTerm)
+- Preserves the common paste flow in supported terminals (currently WezTerm and Kitty)
 - For unsupoprted terminals, a simple command (can be alias'ed/keybinded) can be used for the same
 - Uploads clipboard images or explicit files to a remote staging directory over SSH
 - Pastes a remote path that the agent can consume immediately (can also copy the remote path to your clipboard)
@@ -16,9 +16,10 @@ active terminal pane. The CLI binary is `ph`.
 
 ## Direct Integration Terminals
 
-PasteHop works across all terminals but for the below terminals, it can install a hook to directly inject its functionality so your workflow does not include any additional steps and you can just press ctrl+v. Currently supported direct integration terminals are:
+PasteHop works across all terminals but for the below terminals, it can install a hook to directly inject its functionality so your workflow does not include any additional steps and you can keep using the terminal's native paste shortcut. Currently supported direct integration terminals are:
 
 - WezTerm
+- Kitty
 
 ## Install
 
@@ -51,20 +52,24 @@ ph doctor
 # 2. Trust the SSH target that PasteHop is allowed to upload to
 ph trust --host user@devbox
 
-# 3. Install the WezTerm integration
+# 3. Install the integration for your terminal
 ph install wezterm
+# or
+ph install kitty
 
 # 4. That's it. Now:
 #    - Copy an image on your local machine
-#    - Focus a remote SSH session in WezTerm
-#    - Press Ctrl+V
+#    - Focus a remote SSH session in your terminal
+#    - Press your terminal's normal paste shortcut
 #    - PasteHop uploads the image and pastes the remote path
 ```
+
+Kitty installs `Ctrl+V` and `Ctrl+Shift+V` on Linux, and `Cmd+V`, `Ctrl+V`, and `Ctrl+Shift+V` on macOS. Its remote target detection relies on an explicit `--host` override or parsing the foreground `ssh` or `kitten ssh` command line, so non-SSH shells fall back to normal paste.
 
 ### Option B: Manual via the command line
 
 Use `ph attach` directly when you want explicit control, are scripting, or
-don't use the WezTerm integration.
+don't use the WezTerm or Kitty integration.
 
 ```bash
 # Trust the target once
@@ -129,9 +134,9 @@ Then bind `~/.local/bin/phclip-remote` to a system-wide shortcut:
   `~/.local/bin/phclip-remote`. In GNOME this lives under keyboard shortcuts;
   in KDE it is under custom shortcuts.
 
-If you use WezTerm, prefer `ph install wezterm` because it preserves the
-existing `Ctrl+V` flow directly inside SSH sessions. The alias or global
-shortcut approach is most useful for other terminals.
+If you use WezTerm or Kitty, prefer `ph install wezterm` or `ph install kitty`
+because they preserve the existing paste flow directly inside SSH sessions.
+The alias or global shortcut approach is most useful for other terminals.
 
 ## Common Commands
 
@@ -171,11 +176,13 @@ ph trust --host user@devbox
 ph trust --host user@devbox --remote-dir /srv/uploads
 ```
 
-### install / uninstall -- set up or remove WezTerm Ctrl+V integration
+### install / uninstall -- set up or remove terminal paste integration
 
 ```bash
 ph install wezterm
 ph uninstall wezterm
+ph install kitty
+ph uninstall kitty
 ```
 
 ### doctor -- check that your environment is ready

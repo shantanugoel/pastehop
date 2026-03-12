@@ -4,11 +4,12 @@
 # XDG_CONFIG_HOME is also respected.
 
 # Terminal profile to use by default when pasting images.
-# Supported values currently include: "wezterm"
+# Supported values currently include: "wezterm", "kitty"
 # default_terminal_profile = "wezterm"
 
 # Keybindings that trigger a paste in the target application.
 # Default: ["CTRL+V"]
+# Kitty keeps its native paste shortcuts (`CTRL+SHIFT+V` on Linux, `CMD+V` on macOS).
 # enabled_keybindings = ["CTRL+V"]
 
 # How pasted file paths are formatted when inserted into the target app.

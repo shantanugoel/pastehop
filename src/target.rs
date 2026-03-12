@@ -96,6 +96,10 @@ pub fn parse_foreground_process(process: &str) -> Option<String> {
     match basename {
         "ssh" => parse_ssh_target(&tokens[1..]),
         "wezterm" if tokens.get(1) == Some(&"ssh") => parse_simple_host(&tokens[2..]),
+        "kitten" if tokens.get(1) == Some(&"ssh") => parse_simple_host(&tokens[2..]),
+        "kitty" if tokens.get(1) == Some(&"+kitten") && tokens.get(2) == Some(&"ssh") => {
+            parse_simple_host(&tokens[3..])
+        }
         _ => None,
     }
 }
@@ -196,6 +200,14 @@ mod tests {
         );
         assert_eq!(
             parse_foreground_process("wezterm ssh devbox"),
+            Some("devbox".to_owned())
+        );
+        assert_eq!(
+            parse_foreground_process("kitten ssh devbox"),
+            Some("devbox".to_owned())
+        );
+        assert_eq!(
+            parse_foreground_process("kitty +kitten ssh devbox"),
             Some("devbox".to_owned())
         );
         assert_eq!(parse_foreground_process("bash"), None);

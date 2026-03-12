@@ -6,10 +6,16 @@ use std::{
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
-use crate::{cli::SupportedTerminal, errors::PasteHopError, terminal::wezterm};
+use crate::{
+    cli::SupportedTerminal,
+    errors::PasteHopError,
+    terminal::{kitty, wezterm},
+};
 
 const WEZTERM_START: &str = "-- BEGIN PASTEHOP MANAGED BLOCK";
 const WEZTERM_END: &str = "-- END PASTEHOP MANAGED BLOCK";
+const KITTY_START: &str = "# BEGIN PASTEHOP MANAGED BLOCK";
+const KITTY_END: &str = "# END PASTEHOP MANAGED BLOCK";
 
 pub fn install_terminal(terminal: SupportedTerminal) -> Result<String, PasteHopError> {
     let binary_path = resolve_binary_path()?;
@@ -25,6 +31,22 @@ pub fn install_terminal(terminal: SupportedTerminal) -> Result<String, PasteHopE
                 path.display()
             ))
         }
+        SupportedTerminal::Kitty => {
+            let config_path = kitty::config_path();
+            let kitten_path = kitty::kitten_path();
+            install_support_file(&kitten_path, &kitty::render_kitten(&binary_path), true)?;
+            install_managed_block(
+                &config_path,
+                &kitty::render_config(),
+                KITTY_START,
+                KITTY_END,
+                false,
+            )?;
+            Ok(format!(
+                "installed kitty integration at {}",
+                config_path.display()
+            ))
+        }
     }
 }
 
@@ -36,6 +58,15 @@ pub fn uninstall_terminal(terminal: SupportedTerminal) -> Result<String, PasteHo
             Ok(format!(
                 "removed wezterm integration from {}",
                 path.display()
+            ))
+        }
+        SupportedTerminal::Kitty => {
+            let config_path = kitty::config_path();
+            remove_managed_block(&config_path, KITTY_START, KITTY_END)?;
+            restore_or_remove_support_file(&kitty::kitten_path(), true, kitty::is_managed_kitten)?;
+            Ok(format!(
+                "removed kitty integration from {}",
+                config_path.display()
             ))
         }
     }
@@ -88,6 +119,16 @@ fn ensure_wezterm_scaffold(path: &Path) -> Result<(), PasteHopError> {
         write_support_file(path, wezterm::default_config(), false)?;
     }
     Ok(())
+}
+
+fn install_support_file(
+    path: &Path,
+    contents: &str,
+    executable: bool,
+) -> Result<(), PasteHopError> {
+    let existing = read_optional(path)?;
+    maybe_backup(path, &existing)?;
+    write_support_file(path, contents, executable)
 }
 
 fn read_optional(path: &Path) -> Result<String, PasteHopError> {
@@ -154,6 +195,33 @@ fn write_support_file(path: &Path, contents: &str, executable: bool) -> Result<(
     Ok(())
 }
 
+fn restore_or_remove_support_file<F>(
+    path: &Path,
+    executable: bool,
+    is_managed: F,
+) -> Result<(), PasteHopError>
+where
+    F: Fn(&str) -> bool,
+{
+    let existing = read_optional(path)?;
+    if existing.is_empty() || !is_managed(&existing) {
+        return Ok(());
+    }
+
+    let backup = backup_path(path);
+    if backup.exists() {
+        let restored = read_optional(&backup)?;
+        write_support_file(path, &restored, executable)?;
+    } else if path.exists() {
+        fs::remove_file(path).map_err(|source| PasteHopError::InstallIo {
+            path: path.to_path_buf(),
+            source,
+        })?;
+    }
+
+    Ok(())
+}
+
 fn append_block(existing: &str, block: &str) -> String {
     let trimmed = existing.trim_end();
     if trimmed.is_empty() {
@@ -196,16 +264,27 @@ fn strip_managed_block(existing: &str, start_marker: &str, end_marker: &str) -> 
 
 #[cfg(test)]
 mod tests {
-    use std::{env, fs};
+    use std::{
+        env, fs,
+        sync::{Mutex, OnceLock},
+    };
 
     use tempfile::TempDir;
 
-    use crate::cli::SupportedTerminal;
+    use crate::{cli::SupportedTerminal, terminal::kitty};
 
-    use super::install_terminal;
+    use super::{install_terminal, uninstall_terminal};
+
+    fn env_lock() -> std::sync::MutexGuard<'static, ()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+            .lock()
+            .expect("env lock should not be poisoned")
+    }
 
     #[test]
     fn wezterm_install_creates_scaffold_for_empty_config() {
+        let _guard = env_lock();
         let temp_dir = TempDir::new().expect("temp dir should exist");
         let config_path = temp_dir.path().join("wezterm.lua");
 
@@ -234,6 +313,7 @@ mod tests {
 
     #[test]
     fn wezterm_install_inserts_before_return() {
+        let _guard = env_lock();
         let temp_dir = TempDir::new().expect("temp dir should exist");
         let config_path = temp_dir.path().join("wezterm.lua");
         fs::write(&config_path, "local config = {}\nreturn config\n").expect("seed config");
@@ -254,6 +334,86 @@ mod tests {
         unsafe {
             env::remove_var("PH_BINARY_PATH");
             env::remove_var("PH_WEZTERM_CONFIG_PATH");
+        }
+    }
+
+    #[test]
+    fn kitty_install_writes_managed_config_and_kitten() {
+        let _guard = env_lock();
+        let temp_dir = TempDir::new().expect("temp dir should exist");
+        let config_path = temp_dir.path().join("kitty.conf");
+        fs::write(&config_path, "font_size 14.0\n").expect("seed config");
+
+        unsafe {
+            env::set_var("PH_BINARY_PATH", "/usr/local/bin/ph");
+            env::set_var("PH_KITTY_CONFIG_PATH", &config_path);
+        }
+
+        install_terminal(SupportedTerminal::Kitty).expect("install should succeed");
+
+        let config = fs::read_to_string(&config_path).expect("config should exist");
+        assert!(config.contains("# BEGIN PASTEHOP MANAGED BLOCK"));
+        for key in kitty::managed_keys() {
+            assert!(config.contains(&format!("map {key} kitten pastehop.py")));
+        }
+
+        let kitten_path = temp_dir.path().join("pastehop.py");
+        let kitten = fs::read_to_string(&kitten_path).expect("kitten should exist");
+        assert!(kitten.contains("PH_BINARY = r\"/usr/local/bin/ph\""));
+        assert!(kitten.contains("command = [PH_BINARY, \"hook\", \"kitty\"]"));
+
+        unsafe {
+            env::remove_var("PH_BINARY_PATH");
+            env::remove_var("PH_KITTY_CONFIG_PATH");
+        }
+    }
+
+    #[test]
+    fn kitty_uninstall_removes_managed_artifacts() {
+        let _guard = env_lock();
+        let temp_dir = TempDir::new().expect("temp dir should exist");
+        let config_path = temp_dir.path().join("kitty.conf");
+
+        unsafe {
+            env::set_var("PH_BINARY_PATH", "/usr/local/bin/ph");
+            env::set_var("PH_KITTY_CONFIG_PATH", &config_path);
+        }
+
+        install_terminal(SupportedTerminal::Kitty).expect("install should succeed");
+        uninstall_terminal(SupportedTerminal::Kitty).expect("uninstall should succeed");
+
+        let config = fs::read_to_string(&config_path).expect("config should exist");
+        assert!(!config.contains("# BEGIN PASTEHOP MANAGED BLOCK"));
+        assert!(!temp_dir.path().join("pastehop.py").exists());
+
+        unsafe {
+            env::remove_var("PH_BINARY_PATH");
+            env::remove_var("PH_KITTY_CONFIG_PATH");
+        }
+    }
+
+    #[test]
+    fn kitty_uninstall_restores_preexisting_kitten() {
+        let _guard = env_lock();
+        let temp_dir = TempDir::new().expect("temp dir should exist");
+        let config_path = temp_dir.path().join("kitty.conf");
+        let kitten_path = temp_dir.path().join("pastehop.py");
+        fs::write(&kitten_path, "print('original kitten')\n").expect("seed kitten");
+
+        unsafe {
+            env::set_var("PH_BINARY_PATH", "/usr/local/bin/ph");
+            env::set_var("PH_KITTY_CONFIG_PATH", &config_path);
+        }
+
+        install_terminal(SupportedTerminal::Kitty).expect("install should succeed");
+        uninstall_terminal(SupportedTerminal::Kitty).expect("uninstall should succeed");
+
+        let kitten = fs::read_to_string(&kitten_path).expect("kitten should be restored");
+        assert_eq!(kitten, "print('original kitten')\n");
+
+        unsafe {
+            env::remove_var("PH_BINARY_PATH");
+            env::remove_var("PH_KITTY_CONFIG_PATH");
         }
     }
 }

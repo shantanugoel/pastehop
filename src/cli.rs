@@ -92,6 +92,7 @@ pub struct HookArgs {
 #[derive(Debug, Subcommand)]
 pub enum HookTerminal {
     Wezterm(TerminalHookArgs),
+    Kitty(TerminalHookArgs),
 }
 
 #[derive(Debug, Args, Clone)]
@@ -170,4 +171,5 @@ pub struct GcArgs {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
 pub enum SupportedTerminal {
     Wezterm,
+    Kitty,
 }
