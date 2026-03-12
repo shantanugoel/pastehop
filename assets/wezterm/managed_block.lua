@@ -2,6 +2,8 @@
 config = config or {}
 config.keys = config.keys or {}
 
+local ph_toast_timeout_ms = 10000
+
 table.insert(config.keys, {
   key = "v",
   mods = "CTRL",
@@ -27,7 +29,7 @@ table.insert(config.keys, {
     })
 
     if not success then
-      window:toast_notification("pastehop", stderr or "hook failed", nil, 3000)
+      window:toast_notification("pastehop", stderr or "hook failed", nil, ph_toast_timeout_ms)
       window:perform_action(wezterm.action.PasteFrom("Clipboard"), pane)
       return
     end
@@ -38,7 +40,7 @@ table.insert(config.keys, {
     elseif response.action == "passthrough_key" then
       window:perform_action(wezterm.action.PasteFrom("Clipboard"), pane)
     elseif response.action == "error" and response.message then
-      window:toast_notification("pastehop", response.message, nil, 3000)
+      window:toast_notification("pastehop", response.message, nil, ph_toast_timeout_ms)
     end
   end),
 })
