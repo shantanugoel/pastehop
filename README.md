@@ -47,10 +47,13 @@ automatically uploads the clipboard image and pastes the remote path.
 # 1. Check that your environment is ready (ssh, scp, clipboard access)
 ph doctor
 
-# 2. Install the WezTerm integration
+# 2. Trust the SSH target that PasteHop is allowed to upload to
+ph trust --host user@devbox
+
+# 3. Install the WezTerm integration
 ph install wezterm
 
-# 3. That's it. Now:
+# 4. That's it. Now:
 #    - Copy an image on your local machine
 #    - Focus a remote SSH session in WezTerm
 #    - Press Ctrl+V
@@ -63,6 +66,9 @@ Use `ph attach` directly when you want explicit control, are scripting, or
 don't use the WezTerm integration.
 
 ```bash
+# Trust the target once
+ph trust --host user@devbox
+
 # Upload a local file to a remote host and print the remote path
 ph attach ./diagram.png --host user@devbox
 
@@ -92,6 +98,7 @@ Add the alias to your shell startup file (`~/.zshrc`, `~/.bashrc`, or
 `~/.config/fish/config.fish`), reload your shell, then run:
 
 ```bash
+ph trust --host user@devbox
 phclip
 ```
 
@@ -130,6 +137,9 @@ shortcut approach is most useful for other terminals.
 ### attach -- upload files or clipboard to a remote host
 
 ```bash
+# Trust the target once
+ph trust --host user@devbox
+
 # Upload a single file
 ph attach ./screenshot.png --host user@devbox
 
@@ -151,6 +161,13 @@ ph attach ./spec.pdf --host user@devbox --profile quoted-path
 
 # Override the default remote upload directory
 ph attach ./data.csv --host user@devbox --remote-dir /tmp/uploads
+```
+
+### trust -- approve a remote host for uploads
+
+```bash
+ph trust --host user@devbox
+ph trust --host user@devbox --remote-dir /srv/uploads
 ```
 
 ### install / uninstall -- set up or remove WezTerm Ctrl+V integration
@@ -176,7 +193,8 @@ ph gc --host user@devbox --dry-run
 ## Configuration
 
 Configuration is optional. Editing the config file is only needed if you want to
-pre-approve hosts, adjust size limits, or change the cleanup TTL.
+pre-approve hosts, adjust size limits, or change the cleanup TTL. You can also
+approve hosts with `ph trust --host ...`.
 
 See [`config.example.toml`](config.example.toml) for all available options.
 

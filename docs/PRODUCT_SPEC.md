@@ -112,6 +112,7 @@ Per-upload path pattern:
 - Only user-initiated keypresses or explicit CLI calls can trigger upload.
 - PasteHop must never allow a remote process to silently read the local clipboard.
 - PasteHop uses the user's existing SSH trust model.
+- Unknown hosts must fail closed until explicitly trusted in config or via CLI.
 - PasteHop fails closed when target resolution is ambiguous.
 
 Default limits:

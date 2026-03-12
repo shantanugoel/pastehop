@@ -19,6 +19,8 @@ pub struct Cli {
 pub enum Command {
     /// Upload local files or clipboard content and emit a remote path
     Attach(AttachArgs),
+    /// Approve a remote host for uploads
+    Trust(TrustArgs),
     /// Terminal hook entry points
     Hook(HookArgs),
     /// Install terminal integration
@@ -68,6 +70,17 @@ pub struct AttachArgs {
     /// Enable debug-oriented output
     #[arg(long)]
     pub debug: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct TrustArgs {
+    /// Explicit SSH target such as user@host or host alias
+    #[arg(long)]
+    pub host: String,
+
+    /// Persist a default remote upload directory for this host
+    #[arg(long)]
+    pub remote_dir: Option<String>,
 }
 
 #[derive(Debug, Args)]

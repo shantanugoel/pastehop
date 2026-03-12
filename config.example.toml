@@ -41,6 +41,8 @@
 #
 # Example:
 #
+# ph trust --host devbox
+#
 # [hosts.devbox]
 # allowed = true
 # remote_dir = "~/.cache/pastehop/uploads"   # default if omitted

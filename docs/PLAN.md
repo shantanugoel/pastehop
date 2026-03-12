@@ -72,7 +72,7 @@ assets/
 - remote staging path builder
 - local file validation and size limits
 - `ssh`/`scp` transport wrapper
-- first-use host confirmation
+- explicit host trust via config or CLI
 - `ph attach`
 
 ### Phase 3: Clipboard image support

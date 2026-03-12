@@ -8,10 +8,8 @@ pub enum PasteHopError {
     MissingAttachInput,
     #[error("could not resolve a remote target; pass --host")]
     MissingTarget,
-    #[error("host '{host}' is not approved for uploads")]
+    #[error("host '{host}' is not approved for uploads; run `ph trust --host {host}`")]
     HostDenied { host: String },
-    #[error("unable to confirm first upload to '{host}' in a non-interactive session")]
-    HostConfirmationUnavailable { host: String },
     #[error("too many files requested: {actual} > {limit}")]
     TooManyFiles { limit: usize, actual: usize },
     #[error("local path is not a file: {0}")]
@@ -93,7 +91,7 @@ impl PasteHopError {
         match self {
             Self::MissingAttachInput => 2,
             Self::MissingTarget => 2,
-            Self::HostDenied { .. } | Self::HostConfirmationUnavailable { .. } => 6,
+            Self::HostDenied { .. } => 6,
             Self::TooManyFiles { .. }
             | Self::InvalidLocalPath(_)
             | Self::ReadLocalPath { .. }
