@@ -71,6 +71,58 @@ ph attach --clipboard --host user@devbox
 ph attach ./diagram.png --host user@devbox --dry-run
 ```
 
+### Option C: Add a shell alias or global shortcut
+
+If you use the same remote host frequently, create a short alias for the
+clipboard-upload flow. Replace `user@devbox` with your SSH target:
+
+```bash
+# bash / zsh
+alias phclip='ph attach --clipboard --host user@devbox --copy-path'
+```
+
+```fish
+# fish
+alias phclip "ph attach --clipboard --host user@devbox --copy-path"
+```
+
+Add the alias to your shell startup file (`~/.zshrc`, `~/.bashrc`, or
+`~/.config/fish/config.fish`), reload your shell, then run:
+
+```bash
+phclip
+```
+
+`--copy-path` copies the resulting remote path back to your local clipboard, so
+you can paste it into the active terminal or chat input afterward.
+
+For a true global hotkey, use a small wrapper script instead of a shell alias
+because desktop shortcut managers do not load your interactive shell aliases.
+If `ph` is installed somewhere other than `~/.local/bin/ph`, update the script
+accordingly.
+
+```bash
+mkdir -p ~/.local/bin
+cat > ~/.local/bin/phclip-remote <<'EOF'
+#!/usr/bin/env sh
+exec "$HOME/.local/bin/ph" attach --clipboard --host user@devbox --copy-path
+EOF
+chmod +x ~/.local/bin/phclip-remote
+```
+
+Then bind `~/.local/bin/phclip-remote` to a system-wide shortcut:
+
+- macOS: create a Shortcut with a `Run Shell Script` action that runs
+  `~/.local/bin/phclip-remote`, then assign a keyboard shortcut to that
+  Shortcut.
+- Linux: add a custom keyboard shortcut in your desktop environment that runs
+  `~/.local/bin/phclip-remote`. In GNOME this lives under keyboard shortcuts;
+  in KDE it is under custom shortcuts.
+
+If you use WezTerm, prefer `ph install wezterm` because it preserves the
+existing `Ctrl+V` flow directly inside SSH sessions. The alias or global
+shortcut approach is most useful for other terminals.
+
 ## Common Commands
 
 ### attach -- upload files or clipboard to a remote host
