@@ -9,8 +9,9 @@ active terminal pane. The CLI binary is `ph`.
 ## What It Does
 
 - Preserves the common `Ctrl+V` flow in supported terminals (Currently WezTerm)
+- For unsupoprted terminals, a simple command (can be alias'ed/keybinded) can be used for the same
 - Uploads clipboard images or explicit files to a remote staging directory over SSH
-- Pastes a remote path that the agent can consume immediately
+- Pastes a remote path that the agent can consume immediately (can also copy the remote path to your clipboard)
 - Uses the system `ssh` and `scp`; no remote daemon or server-side install required
 
 ## Direct Integration Terminals
