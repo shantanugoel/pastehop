@@ -19,14 +19,19 @@ active terminal pane. The CLI binary is `ph`.
 
 ## Install
 
+Install the latest prebuilt binary from GitHub Releases:
+
 ```bash
-cargo install --path .
+curl -fsSL https://raw.githubusercontent.com/shantanugoel/pastehop/main/install.sh | sh
 ```
 
-Or build a local release binary:
+Installs the latest GitHub release for macOS or Linux and places `ph` in
+`~/.local/bin` by default, or `/usr/local/bin` when run as root.
+
+Or build and install from crates.io with Cargo:
 
 ```bash
-cargo build --release
+cargo install pastehop
 ```
 
 ## Quick Start
