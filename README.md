@@ -15,6 +15,8 @@ active terminal pane. The CLI binary is `ph`.
 
 ## Direct Integration Terminals
 
+PasteHop works across all terminals but for the below terminals, it can install a hook to directly inject its functionality so your workflow does not include any additional steps and you can just press ctrl+v. Currently supported direct integration terminals are:
+
 - WezTerm
 
 ## Install
