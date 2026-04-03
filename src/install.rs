@@ -246,17 +246,17 @@ fn insert_before_last_return(existing: &str, block: &str) -> String {
 }
 
 fn strip_managed_block(existing: &str, start_marker: &str, end_marker: &str) -> String {
-    if let Some(start) = existing.find(start_marker) {
-        if let Some(end_relative) = existing[start..].find(end_marker) {
-            let end = start + end_relative + end_marker.len();
-            let mut updated = String::new();
-            updated.push_str(existing[..start].trim_end());
-            if !updated.is_empty() && !existing[end..].trim().is_empty() {
-                updated.push_str("\n\n");
-            }
-            updated.push_str(existing[end..].trim_start());
-            return updated;
+    if let Some(start) = existing.find(start_marker)
+        && let Some(end_relative) = existing[start..].find(end_marker)
+    {
+        let end = start + end_relative + end_marker.len();
+        let mut updated = String::new();
+        updated.push_str(existing[..start].trim_end());
+        if !updated.is_empty() && !existing[end..].trim().is_empty() {
+            updated.push_str("\n\n");
         }
+        updated.push_str(existing[end..].trim_start());
+        return updated;
     }
 
     existing.to_owned()

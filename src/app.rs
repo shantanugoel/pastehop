@@ -84,10 +84,10 @@ fn handle_attach(args: AttachArgs) -> Result<()> {
             .map_err(wrap)?;
     }
 
-    if args.debug {
-        if let Err(error) = cleanup_result {
-            eprintln!("cleanup warning: {error}");
-        }
+    if args.debug
+        && let Err(error) = cleanup_result
+    {
+        eprintln!("cleanup warning: {error}");
     }
 
     let formatted_paths: Vec<String> = uploads

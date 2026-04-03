@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize, ValueEnum)]
 #[serde(rename_all = "kebab-case")]
+#[allow(clippy::enum_variant_names)]
 pub enum PathProfile {
     #[default]
     PlainPath,

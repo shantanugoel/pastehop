@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf};
+use std::{env, path::Path};
 
 use crate::config::ConfigStore;
 
@@ -36,7 +36,7 @@ fn check_tool(tool: &'static str) -> DoctorCheck {
     }
 }
 
-fn check_config_path(path: &PathBuf) -> DoctorCheck {
+fn check_config_path(path: &Path) -> DoctorCheck {
     let parent = path
         .parent()
         .map(|dir| dir.display().to_string())
