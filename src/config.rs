@@ -135,7 +135,9 @@ pub fn default_config_path() -> PathBuf {
             .join("config.toml");
     }
 
-    let home = env::var("HOME").unwrap_or_else(|_| ".".to_owned());
+    let home = env::var("HOME")
+        .or_else(|_| env::var("USERPROFILE"))
+        .unwrap_or_else(|_| ".".to_owned());
     PathBuf::from(home)
         .join(".config")
         .join("pastehop")
@@ -186,8 +188,10 @@ mod tests {
         let path = temp_dir.path().join("pastehop").join("config.toml");
         let store = ConfigStore::with_path(&path);
 
-        let mut config = Config::default();
-        config.default_terminal_profile = Some("wezterm".to_owned());
+        let mut config = Config {
+            default_terminal_profile: Some("wezterm".to_owned()),
+            ..Config::default()
+        };
         config.hosts.entry("devbox".to_owned()).or_default().allowed = true;
 
         store.save(&config).expect("config should save");
@@ -206,5 +210,93 @@ mod tests {
         let loaded = store.load().expect("missing config should not fail");
 
         assert_eq!(loaded, Config::default());
+    }
+
+    #[test]
+    fn default_config_path_respects_env_vars() {
+        use super::default_config_path;
+        use std::env;
+
+        // Save original env vars
+        let orig_ph_config_path = env::var("PH_CONFIG_PATH").ok();
+        let orig_xdg_config_home = env::var("XDG_CONFIG_HOME").ok();
+        let orig_home = env::var("HOME").ok();
+        let orig_userprofile = env::var("USERPROFILE").ok();
+
+        // Clear them first
+        unsafe {
+            env::remove_var("PH_CONFIG_PATH");
+            env::remove_var("XDG_CONFIG_HOME");
+            env::remove_var("HOME");
+            env::remove_var("USERPROFILE");
+        }
+
+        // 1. Check fallback to "."
+        let path = default_config_path();
+        assert_eq!(
+            path.to_str().unwrap().replace('\\', "/"),
+            "./.config/pastehop/config.toml"
+        );
+
+        // 2. Check USERPROFILE fallback
+        unsafe {
+            env::set_var("USERPROFILE", "/user/profile");
+        }
+        let path = default_config_path();
+        assert_eq!(
+            path.to_str().unwrap().replace('\\', "/"),
+            "/user/profile/.config/pastehop/config.toml"
+        );
+
+        // 3. Check HOME precedence
+        unsafe {
+            env::set_var("HOME", "/home/user");
+        }
+        let path = default_config_path();
+        assert_eq!(
+            path.to_str().unwrap().replace('\\', "/"),
+            "/home/user/.config/pastehop/config.toml"
+        );
+
+        // 4. Check XDG_CONFIG_HOME precedence
+        unsafe {
+            env::set_var("XDG_CONFIG_HOME", "/xdg/config");
+        }
+        let path = default_config_path();
+        assert_eq!(
+            path.to_str().unwrap().replace('\\', "/"),
+            "/xdg/config/pastehop/config.toml"
+        );
+
+        // 5. Check PH_CONFIG_PATH precedence
+        unsafe {
+            env::set_var("PH_CONFIG_PATH", "/ph/config.toml");
+        }
+        let path = default_config_path();
+        assert_eq!(path.to_str().unwrap().replace('\\', "/"), "/ph/config.toml");
+
+        // Restore original env vars
+        unsafe {
+            if let Some(v) = orig_ph_config_path {
+                env::set_var("PH_CONFIG_PATH", v);
+            } else {
+                env::remove_var("PH_CONFIG_PATH");
+            }
+            if let Some(v) = orig_xdg_config_home {
+                env::set_var("XDG_CONFIG_HOME", v);
+            } else {
+                env::remove_var("XDG_CONFIG_HOME");
+            }
+            if let Some(v) = orig_home {
+                env::set_var("HOME", v);
+            } else {
+                env::remove_var("HOME");
+            }
+            if let Some(v) = orig_userprofile {
+                env::set_var("USERPROFILE", v);
+            } else {
+                env::remove_var("USERPROFILE");
+            }
+        }
     }
 }

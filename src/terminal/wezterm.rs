@@ -11,7 +11,10 @@ pub fn config_path() -> PathBuf {
             .join("wezterm.lua");
     }
 
-    PathBuf::from(env::var("HOME").unwrap_or_else(|_| ".".to_owned()))
+    let home = env::var("HOME")
+        .or_else(|_| env::var("USERPROFILE"))
+        .unwrap_or_else(|_| ".".to_owned());
+    PathBuf::from(home)
         .join(".config")
         .join("wezterm")
         .join("wezterm.lua")

@@ -19,9 +19,10 @@ pub fn config_dir() -> PathBuf {
         return PathBuf::from(config_home).join("kitty");
     }
 
-    PathBuf::from(env::var("HOME").unwrap_or_else(|_| ".".to_owned()))
-        .join(".config")
-        .join("kitty")
+    let home = env::var("HOME")
+        .or_else(|_| env::var("USERPROFILE"))
+        .unwrap_or_else(|_| ".".to_owned());
+    PathBuf::from(home).join(".config").join("kitty")
 }
 
 pub fn config_path() -> PathBuf {
