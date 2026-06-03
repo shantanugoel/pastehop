@@ -21,9 +21,31 @@ pub fn config_path() -> PathBuf {
 }
 
 pub fn render(binary_path: &str) -> String {
-    include_str!("../../assets/wezterm/managed_block.lua").replace("__PH_BINARY__", binary_path)
+    let escaped_path = if cfg!(windows) {
+        binary_path.replace('\\', "\\\\")
+    } else {
+        binary_path.to_owned()
+    };
+    include_str!("../../assets/wezterm/managed_block.lua").replace("__PH_BINARY__", &escaped_path)
 }
 
 pub fn default_config() -> &'static str {
     "local wezterm = require 'wezterm'\nlocal config = wezterm.config_builder()\n\nreturn config\n"
+}
+
+#[cfg(test)]
+mod tests {
+    use super::render;
+
+    #[test]
+    fn render_escapes_backslashes_on_windows() {
+        if cfg!(windows) {
+            let rendered = render(r"C:\Program Files\pastehop\ph.exe");
+            assert!(rendered.contains(r"C:\\Program Files\\pastehop\\ph.exe"));
+            assert!(!rendered.contains(r"C:\Program Files\pastehop\ph.exe"));
+        } else {
+            let rendered = render("/usr/local/bin/ph");
+            assert!(rendered.contains("/usr/local/bin/ph"));
+        }
+    }
 }
